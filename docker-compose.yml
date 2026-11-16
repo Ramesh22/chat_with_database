@@ -1,0 +1,58 @@
+x-app: &app
+  build: .
+  image: chat-with-database:local
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *app
+    command:
+      - sh
+      - -c
+      - |
+        if [ ! -f /app/data/chat_with_database.db ]; then
+          echo "Seeding demo database..."
+          python seed_db.py
+        fi
+        exec uvicorn main:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: sqlite:////app/data/chat_with_database.db
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      SQL_STATEMENT_TIMEOUT_MS: ${SQL_STATEMENT_TIMEOUT_MS:-15000}
+      MAX_RESULT_ROWS: ${MAX_RESULT_ROWS:-200}
+    ports:
+      - "8000:8000"
+    volumes:
+      - app-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json')"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  ui:
+    <<: *app
+    command:
+      - streamlit
+      - run
+      - ui/streamlit_app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  app-data:
