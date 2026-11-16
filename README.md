@@ -11,8 +11,18 @@ seeded SQLite demo database) with one command:
 OPENAI_API_KEY=sk-your-key docker compose up --build
 ```
 
-Alternatively, copy `.env.example` to `.env`, set `OPENAI_API_KEY`, then run
-`docker compose up --build`.
+Or copy `.env.example` to `.env`, fill in your LLM settings, then run
+`docker compose up --build`:
+
+```env
+OPENAI_API_KEY=sk-your-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+```
+
+Any OpenAI-compatible API works. For DeepSeek, use
+`OPENAI_BASE_URL=https://api.deepseek.com` and the exact model ID its `/models`
+endpoint returns. `LLM_MODEL` is passed through to the provider unchanged.
 
 - Chat UI: <http://localhost:8501>
 - API docs: <http://localhost:8000/docs>
@@ -41,6 +51,20 @@ This creates `chat_with_database.db` in the project root. To inspect it:
 sqlite3 chat_with_database.db "SELECT * FROM users LIMIT 5;"
 ```
 
+### Run the API and UI locally
+
+```bash
+# terminal 1 — force SQLite even if .env points at Postgres
+DATABASE_URL=sqlite:///./chat_with_database.db uvicorn main:app --reload
+
+# terminal 2
+API_URL=http://localhost:8000 streamlit run ui/streamlit_app.py
+```
+
+Open <http://localhost:8501>. The API docs are at <http://localhost:8000/docs>.
+Copy `.env.example` to `.env` and fill in the LLM settings described above before
+starting the API.
+
 ### Custom row counts
 
 ```bash
@@ -49,16 +73,31 @@ python seed_db.py --users 200 --orders 1000
 
 ### Seed a Postgres database instead
 
-Set `DATABASE_URL` (or pass `--database-url`) to a Postgres connection string:
+Override `DATABASE_URL` (or uncomment the Postgres line in `.env`) with a
+Postgres connection string:
 
 ```bash
 export DATABASE_URL="postgresql+psycopg://user:password@localhost:5432/mydb"
 python seed_db.py
 ```
 
+> The app and LLM prompt are SQLite-first. If you run against Postgres, update the
+> dialect instructions in `llm.py` so the generated SQL uses Postgres syntax.
+
 > The script **drops and recreates** the `users` and `orders` tables on every
 > run, so it is safe to re-run but will overwrite any data in those tables.
 > Point it at a read-only demo database, not production.
+
+## Example questions
+
+- How many users and orders are there?
+- What is the average order value?
+- Which 5 products generate the most revenue?
+- Who are the top 5 customers by total spend?
+- Show monthly revenue from delivered orders.
+- Which users have never placed an order?
+- What percentage of orders were cancelled?
+- Show the 10 most recent orders with the customer's name and country.
 
 ## How malicious queries are blocked
 
