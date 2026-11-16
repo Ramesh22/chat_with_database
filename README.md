@@ -79,6 +79,14 @@ coerces the model into emitting a destructive query. The app uses layered defens
   the model's validated output is executed. Credentials come from `DATABASE_URL`,
   never source code.
 
+
+### Screenshots
+<img width="2856" height="1200" alt="image" src="https://github.com/user-attachments/assets/e0f860e3-6870-41d4-b4e1-90e170b671aa" />
+
+<img width="1428" height="481" alt="image" src="https://github.com/user-attachments/assets/c4ce4fa2-231c-4fba-ae8f-49ad0ca22e2e" />
+
+<img width="2856" height="1490" alt="image" src="https://github.com/user-attachments/assets/79495296-3046-451a-b81e-adf02c16d2e3" />
+
 ### Limitations
 
 - **The validator is a heuristic, not a SQL parser.** It is a conservative blocklist
