@@ -99,6 +99,9 @@ python seed_db.py
 - What percentage of orders were cancelled?
 - Show the 10 most recent orders with the customer's name and country.
 
+When a result has one label column and one numeric column (up to 50 rows), the UI
+also renders a bar chart automatically, or a line chart for date/time columns.
+
 ## How malicious queries are blocked
 
 Classic SQL injection is not the primary risk here: the user never supplies SQL.

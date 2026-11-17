@@ -6,6 +6,7 @@ import json
 import os
 from urllib import error, request
 
+import pandas as pd
 import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
@@ -36,6 +37,31 @@ def ask_database(question: str) -> dict:
         raise RuntimeError(f"Could not reach the API at {API_URL}: {exc.reason}") from exc
 
 
+def _render_chart(rows: list[dict]) -> None:
+    if not 1 < len(rows) <= 50:
+        return
+    columns = list(rows[0])
+    numeric = [
+        column
+        for column in columns
+        if all(
+            isinstance(row.get(column), (int, float))
+            and not isinstance(row.get(column), bool)
+            for row in rows
+        )
+    ]
+    labels = [column for column in columns if column not in numeric]
+    if not numeric or not labels:
+        return
+    x, y = labels[0], numeric[0]
+    frame = pd.DataFrame(rows)[[x, y]]
+    st.caption(f"{y} by {x}")
+    if any(token in x.lower() for token in ("date", "month", "year", "day", "time", "week")):
+        st.line_chart(frame, x=x, y=y)
+    else:
+        st.bar_chart(frame, x=x, y=y)
+
+
 def render_answer(answer: dict) -> None:
     count = answer.get("row_count", 0)
     st.markdown(f"**{count}** row(s) returned.")
@@ -43,6 +69,7 @@ def render_answer(answer: dict) -> None:
     rows = answer.get("rows") or []
     if rows:
         st.dataframe(rows, use_container_width=True, hide_index=True)
+        _render_chart(rows)
     if answer.get("truncated"):
         st.warning(f"Results truncated to the first {count} rows.")
 
